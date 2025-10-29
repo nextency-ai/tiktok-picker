@@ -45,16 +45,13 @@
 
             const formData = new FormData(productForm);
             
-            // === URL DO WORKFLOW #1 (WYSZUKIWARKA) - PRODUKCYJNY ===
-            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
+            // === NOWY URL Z HASŁEM W PARAMETRZE ===
+            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae?secret=super-tajne-haslo-do-mojego-webhooka-12345';
 
             try {
                 const response = await fetch(mainWebhookUrl, {
                     method: 'POST',
-                    headers: {
-                        // === UWAGA: Hasło jest już wstawione ===
-                        'X-N8N-API-KEY': 'super-tajne-haslo-do-mojego-webhooka-12345' 
-                    },
+                    // Blok 'headers' został usunięty
                     body: formData
                 } );
 
