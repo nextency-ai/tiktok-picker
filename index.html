@@ -18,30 +18,25 @@
 </head>
 <body>
 
-    <!-- Kontener na dynamiczną zawartość -->
     <div id="content-container">
-        <!-- Domyślnie pusty, JavaScript zdecyduje co pokazać -->
+        <!-- JavaScript dynamicznie wstawi tutaj formularz lub wyniki -->
     </div>
 
     <script async src="https://www.tiktok.com/embed.js"></script>
     <script>
         const container = document.getElementById('content-container' );
 
-        // Główna funkcja, która uruchamia się po załadowaniu strony
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const dataParam = params.get('data');
 
             if (dataParam) {
-                // Jeśli są dane w URL, pokaż wyniki
                 displayResults(dataParam);
             } else {
-                // W przeciwnym razie, pokaż formularz
                 displayForm();
             }
         };
 
-        // Funkcja do wyświetlania formularza
         function displayForm() {
             container.innerHTML = `
                 <h1>Stwórz swoje viralowe wideo</h1>
@@ -53,7 +48,7 @@
                     <label for="product_name">2. Podaj nazwę produktu:</label>
                     <input type="text" id="product_name" name="product_name" required>
                     
-                    <label for="product_keywords">3. Opisz produkt (3-5 słów):</label>
+                    <label for="product_keywords">3. Opisz produkt lub niszę (3-5 słów):</label>
                     <input type="text" id="product_keywords" name="product_keywords" required>
                     
                     <button type="submit">Znajdź inspiracje</button>
@@ -64,7 +59,6 @@
             productForm.addEventListener('submit', handleFormSubmit);
         }
 
-        // Funkcja do wyświetlania wyników
         function displayResults(dataParam) {
             container.innerHTML = `<div id="loading"><h2>Przetwarzanie wyników...</h2></div>`;
             try {
@@ -89,15 +83,45 @@
             }
         }
 
-        // Funkcja obsługująca wysłanie formularza
         async function handleFormSubmit(event) {
             event.preventDefault();
             container.innerHTML = `<div id="loading"><h2>Proszę czekać, analizujemy trendy...</h2><p>(To może potrwać do 2 minut)</p></div>`;
 
             const formData = new FormData(event.target);
-           // --- WAŻNE: Wklej tutaj URL webhooka z DRUGIEGO workflow ---
+            
+            // === URL DO WORKFLOW #1 (WYSZUKIWARKA) JEST JUŻ WSTAWIONY ===
+            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook-test/adb882e6-67b9-470b-83ea-a53af1977cae';
+
+            try {
+                const response = await fetch(mainWebhookUrl, {
+                    method: 'POST',
+                    body: formData,
+                } );
+                if (!response.ok) throw new Error(`Błąd serwera: ${response.statusText}`);
+                
+                const responseData = await response.json();
+                const encodedData = responseData.encodedData; 
+                
+                if (!encodedData) {
+                    throw new Error("Odpowiedź serwera nie zawierała zakodowanych danych. Sprawdź ostatni węzeł w n8n.");
+                }
+                
+                window.location.href = `${window.location.pathname}?data=${encodedData}`;
+
+            } catch (e) {
+                container.innerHTML = `<div id="error-message"><h2>Wystąpił błąd: ${e.message}. Spróbuj ponownie.</h2></div>`;
+            }
+        }
+
+        function chooseVideo(videoId) {
+            // === WAŻNE: Wciąż musisz wstawić tutaj URL z Twojego DRUGIEGO workflow ===
             const choiceWebhookUrl = 'URL_WEBHOOKA_Z_WORKFLOW_2';
             
+            if (choiceWebhookUrl === 'URL_WEBHOOKA_Z_WORKFLOW_2') {
+                alert('Błąd konfiguracji: URL webhooka dla Workflow #2 nie został ustawiony w kodzie strony!');
+                return;
+            }
+
             container.innerHTML = `
                 <div id="final-message">
                     <h2>Dziękujemy! Rozpoczynamy generowanie wideo.</h2>
