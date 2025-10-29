@@ -45,8 +45,8 @@
 
             const formData = new FormData(productForm);
             
-            // === NOWY URL Z HASŁEM W PARAMETRZE ===
-            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae?secret=super-tajne-haslo-do-mojego-webhooka-12345';
+            // === CZYSTY URL PRODUKCYJNY DO WORKFLOW #1 ===
+            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
 
             try {
                 const response = await fetch(mainWebhookUrl, {
