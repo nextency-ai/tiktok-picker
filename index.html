@@ -45,8 +45,8 @@
 
             const formData = new FormData(productForm);
             
-            // === URL DO WORKFLOW #1 (WYSZUKIWARKA) - WSTAWIONY ===
-            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook-test/adb882e6-67b9-470b-83ea-a53af1977cae';
+            // === URL DO WORKFLOW #1 (WYSZUKIWARKA) - PRODUKCYJNY ===
+            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
 
             try {
                 const response = await fetch(mainWebhookUrl, { method: 'POST', body: formData } );
@@ -68,8 +68,8 @@
         }
 
         function pollForResults(jobId) {
-            // === URL DO WORKFLOW #2 (DOSTAWCA WYNIKÓW) - WSTAWIONY ===
-            const resultsWebhookUrl = 'https://nextency.app.n8n.cloud/webhook-test/7c2e2895-569e-4622-81a1-b82f7fea4169';
+            // === URL DO WORKFLOW #2 (DOSTAWCA WYNIKÓW) - PRODUKCYJNY ===
+            const resultsWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/7c2e2895-569e-4622-81a1-b82f7fea4169';
             
             let attempts = 0;
             const interval = setInterval(async ( ) => {
@@ -112,16 +112,11 @@
         }
 
         function chooseVideo(videoId) {
-            // === WAŻNE: Wklej tutaj URL z Twojego WORKFLOW #3 (Generator Wideo) ===
-            const choiceWebhookUrl = 'URL_WEBHOOKA_DO_GENEROWANIA_WIDEO';
+            // === URL DO WORKFLOW #3 (GENERATOR WIDEO) - PRODUKCYJNY ===
+            const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
             
-            if (choiceWebhookUrl === 'URL_WEBHOOKA_DO_GENEROWANIA_WIDEO') {
-                alert('Błąd konfiguracji: URL webhooka dla Workflow #3 nie został ustawiony w kodzie strony!');
-                return;
-            }
-
             container.innerHTML = `<div id="final-message"><h2>Dziękujemy! Rozpoczynamy generowanie wideo.</h2><p>Gdy będzie gotowe, otrzymasz je na e-mail.</p></div>`;
-            fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
+            fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' } );
         }
     </script>
 </body>
