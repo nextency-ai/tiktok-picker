@@ -49,7 +49,15 @@
             const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
 
             try {
-                const response = await fetch(mainWebhookUrl, { method: 'POST', body: formData } );
+                const response = await fetch(mainWebhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        // === UWAGA: Hasło jest już wstawione ===
+                        'X-N8N-API-KEY': 'super-tajne-haslo-do-mojego-webhooka-12345' 
+                    },
+                    body: formData
+                } );
+
                 if (!response.ok) throw new Error(`Błąd serwera: ${response.statusText}`);
                 
                 const responseData = await response.json();
@@ -86,14 +94,13 @@
                         clearInterval(interval);
                         displayResults(videos);
                     }
-                    // Jeśli status to 204 (No Content), to znaczy, że dane nie są jeszcze gotowe. Czekamy dalej.
                 } catch (e) {
                     clearInterval(interval);
                     container.innerHTML = `<div id="error-message"><h2>Błąd podczas pobierania wyników: ${e.message}</h2></div>`;
                 }
                 
                 attempts++;
-            }, 5000); // Odpytuj co 5 sekund
+            }, 5000); 
         }
 
         function displayResults(videos) {
