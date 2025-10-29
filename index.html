@@ -3,90 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wybór Inspiracji Wideo</title>
+    <title>Generator Wideo TikTok</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; background-color: #f4f4f9; color: #333; }
         h1, h2 { color: #1a1a1a; }
         .hidden { display: none; }
+        form { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin: 10px 0 20px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background-color: #0056b3; }
         .video-choice { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s; }
-        button:hover { background-color: #218838; }
-        #loading { text-align: center; padding: 40px; }
-        #final-message { text-align: center; padding: 40px; background-color: #e6ffed; border: 1px solid #b7e4c7; border-radius: 8px; }
+        #loading, #final-message, #error-message { text-align: center; padding: 40px; }
     </style>
 </head>
 <body>
 
-    <h1>Twoje propozycje wideo</h1>
-
-    <div id="loading">
-        <h2>Proszę czekać, analizujemy najnowsze trendy na TikToku...</h2>
-        <p>To może potrwać do 2 minut.</p>
-    </div>
-
-    <div id="results" class="hidden">
-        <h2>Wybierz wideo, które posłuży jako inspiracja:</h2>
-        <div id="video-options"></div>
-    </div>
-    
-    <div id="final-message" class="hidden">
-        <h2>Dziękujemy za wybór!</h2>
-        <p>Rozpoczynamy proces generowania Twojego unikalnego wideo. Gdy będzie gotowe, otrzymasz je w osobnej wiadomości e-mail.</p>
+    <!-- Kontener na dynamiczną zawartość -->
+    <div id="content-container">
+        <!-- Domyślnie pusty, JavaScript zdecyduje co pokazać -->
     </div>
 
     <script async src="https://www.tiktok.com/embed.js"></script>
     <script>
-        window.onload = function( ) {
-            const loadingDiv = document.getElementById('loading');
-            const resultsDiv = document.getElementById('results');
-            const videoOptionsDiv = document.getElementById('video-options');
+        const container = document.getElementById('content-container' );
+
+        // Główna funkcja, która uruchamia się po załadowaniu strony
+        window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const dataParam = params.get('data');
 
-            if (!dataParam) {
-                loadingDiv.innerHTML = "<h2>Błąd: Nie znaleziono danych wideo. Upewnij się, że zostałeś przekierowany z formularza n8n.</h2>";
-                return;
-            }
-
-            try {
-                const decodedData = atob(dataParam);
-                const videos = JSON.parse(decodedData);
-
-                loadingDiv.classList.add('hidden');
-                resultsDiv.classList.remove('hidden');
-
-                videos.forEach((video, index) => {
-                    const videoContainer = document.createElement('div');
-                    videoContainer.className = 'video-choice';
-                    videoContainer.innerHTML = `
-                        <h3>Opcja ${index + 1}</h3>
-                        ${video.embedHtml}
-                        <p><strong>Statystyki:</strong> ${video.playCount.toLocaleString('pl-PL')} odtworzeń, ${video.diggCount.toLocaleString('pl-PL')} polubień</p>
-                        <button onclick="chooseVideo('${video.id}')">Wybieram to wideo</button>
-                    `;
-                    videoOptionsDiv.appendChild(videoContainer);
-                });
-
-            } catch (e) {
-                loadingDiv.innerHTML = `<h2>Błąd podczas przetwarzania danych. Spróbuj ponownie. (${e.message})</h2>`;
+            if (dataParam) {
+                // Jeśli są dane w URL, pokaż wyniki
+                displayResults(dataParam);
+            } else {
+                // W przeciwnym razie, pokaż formularz
+                displayForm();
             }
         };
 
-        function chooseVideo(videoId) {
-            const resultsDiv = document.getElementById('results');
-            const finalMessageDiv = document.getElementById('final-message');
+        // Funkcja do wyświetlania formularza
+        function displayForm() {
+            container.innerHTML = `
+                <h1>Stwórz swoje viralowe wideo</h1>
+                <p>Wypełnij poniższe pola, a nasza AI znajdzie 3 najlepsze inspiracje z TikToka, które możesz odtworzyć ze swoim produktem.</p>
+                <form id="productForm">
+                    <label for="product_image">1. Wgraj zdjęcie produktu:</label>
+                    <input type="file" id="product_image" name="product_image" required>
+                    
+                    <label for="product_name">2. Podaj nazwę produktu:</label>
+                    <input type="text" id="product_name" name="product_name" required>
+                    
+                    <label for="product_keywords">3. Opisz produkt (3-5 słów):</label>
+                    <input type="text" id="product_keywords" name="product_keywords" required>
+                    
+                    <button type="submit">Znajdź inspiracje</button>
+                </form>
+            `;
             
-            // --- WAŻNE: Wklej tutaj URL webhooka z drugiego workflow ---
-            const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook-test/adb882e6-67b9-470b-83ea-a53af1977cae'; 
-            
-            if (choiceWebhookUrl === 'YOUR_SECOND_WEBHOOK_URL') {
-                alert('Błąd konfiguracji: URL webhooka nie został ustawiony w kodzie strony!');
-                return;
+            const productForm = document.getElementById('productForm');
+            productForm.addEventListener('submit', handleFormSubmit);
+        }
+
+        // Funkcja do wyświetlania wyników
+        function displayResults(dataParam) {
+            container.innerHTML = `<div id="loading"><h2>Przetwarzanie wyników...</h2></div>`;
+            try {
+                const decodedData = atob(dataParam);
+                const videos = JSON.parse(decodedData);
+                
+                let videoHTML = '<h2>Wybierz wideo, które posłuży jako inspiracja:</h2>';
+                videos.forEach((video, index) => {
+                    videoHTML += `
+                        <div class="video-choice">
+                            <h3>Opcja ${index + 1}</h3>
+                            ${video.embedHtml}
+                            <p><strong>Statystyki:</strong> ${video.playCount.toLocaleString('pl-PL')} odtworzeń, ${video.diggCount.toLocaleString('pl-PL')} polubień</p>
+                            <button onclick="chooseVideo('${video.id}')">Wybieram to wideo</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = videoHTML;
+
+            } catch (e) {
+                container.innerHTML = `<div id="error-message"><h2>Błąd podczas przetwarzania danych: ${e.message}</h2></div>`;
             }
+        }
 
-            resultsDiv.classList.add('hidden');
-            finalMessageDiv.classList.remove('hidden');
+        // Funkcja obsługująca wysłanie formularza
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            container.innerHTML = `<div id="loading"><h2>Proszę czekać, analizujemy trendy...</h2><p>(To może potrwać do 2 minut)</p></div>`;
 
+            const formData = new FormData(event.target);
+           // --- WAŻNE: Wklej tutaj URL webhooka z DRUGIEGO workflow ---
+            const choiceWebhookUrl = 'URL_WEBHOOKA_Z_WORKFLOW_2';
+            
+            container.innerHTML = `
+                <div id="final-message">
+                    <h2>Dziękujemy! Rozpoczynamy generowanie wideo.</h2>
+                    <p>Gdy będzie gotowe, otrzymasz je na e-mail.</p>
+                </div>`;
+            
             fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
         }
     </script>
