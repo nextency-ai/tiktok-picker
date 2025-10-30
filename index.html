@@ -36,7 +36,7 @@
         function renderForm() {
             appContainer.innerHTML = `
                 <h1>Generator Viralowych Wideo</h1>
-                <form id="product-form">
+                <form id="product-form" action="${mainWebhookUrl}" method="POST" enctype="multipart/form-data">
                     <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
                     <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
                     <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
@@ -44,7 +44,9 @@
                     <button type="submit">Znajdź inspiracje</button>
                 </form>
             `;
-            document.getElementById('product-form').addEventListener('submit', handleFormSubmit);
+            document.getElementById('product-form').addEventListener('submit', () => {
+                appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+            });
         }
 
         function displayVideos(videos) {
@@ -71,35 +73,6 @@
 
         function showError(message) {
             appContainer.innerHTML = `<h1>Błąd</h1><p>${message}</p><button onclick="window.location.href = window.location.origin + window.location.pathname">Spróbuj ponownie</button>`;
-        }
-
-        // --- GŁÓWNA LOGIKA FORMULARZA (POPRAWIONA) ---
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const form = event.target;
-            const formData = new FormData(form);
-
-            appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
-
-            try {
-                // Wysyłamy dane do n8n za pomocą Fetch API
-                const response = await fetch(mainWebhookUrl, {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                // Sprawdzamy, czy nastąpiło przekierowanie (to oznacza sukces)
-                if (response.redirected) {
-                    // Jeśli tak, pozwalamy przeglądarce na to przekierowanie
-                    window.location.href = response.url;
-                } else {
-                    // Jeśli nie, to znaczy, że n8n nie odpowiedział przekierowaniem
-                    const errorText = await response.text();
-                    showError(`Błąd komunikacji: Oczekiwano przekierowania. Odpowiedź serwera: ${errorText}`);
-                }
-            } catch (error) {
-                showError(`Krytyczny błąd sieci: ${error.message}`);
-            }
         }
 
         // --- GŁÓWNA LOGIKA POBIERANIA WYNIKÓW ---
