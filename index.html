@@ -44,10 +44,14 @@
                     <button type="submit">Znajdź inspiracje</button>
                 </form>
             `;
-            // Ta funkcja obsługuje tylko wyświetlanie komunikatu oczekiwania, a nie wysyłanie danych.
-            // Dane są wysyłane przez czysty HTML (action, method, enctype)
-            document.getElementById('product-form').addEventListener('submit', () => {
+            
+            // POPRAWKA: Wymuszamy wyświetlenie komunikatu oczekiwania przed wysłaniem formularza.
+            document.getElementById('product-form').addEventListener('submit', (e) => {
+                e.preventDefault(); // Zatrzymujemy natychmiastowe wysłanie
                 appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+                
+                // Opóźniamy właściwe wysłanie, aby przeglądarka zdążyła wyświetlić komunikat
+                setTimeout(() => e.target.submit(), 100); 
             });
         }
 
