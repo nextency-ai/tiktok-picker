@@ -25,16 +25,18 @@
     </div>
 
     <script>
+        // --- KONFIGURACJA ---
         const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
         const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
         const upstashUrl = 'https://eu2-saved-bug-31043.upstash.io';
         const upstashToken = 'AXlEAAIncDJkYjNkYjQwYWEyMmM0YWQyOTE3YWI3YWViMDI5YmUyMnAyMzEwNDQ';
         const appContainer = document.getElementById('app' );
 
+        // --- FUNKCJE RENDERUJĄCE ---
         function renderForm() {
             appContainer.innerHTML = `
                 <h1>Generator Viralowych Wideo</h1>
-                <form id="product-form">
+                <form id="product-form" action="${mainWebhookUrl}" method="POST" enctype="multipart/form-data">
                     <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
                     <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
                     <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
@@ -42,16 +44,9 @@
                     <button type="submit">Znajdź inspiracje</button>
                 </form>
             `;
-            document.getElementById('product-form').addEventListener('submit', handleFormSubmit);
-        }
-
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-            const form = event.target;
-            const formData = new FormData(form);
-            appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2>';
-            // To zapytanie spowoduje przekierowanie przez n8n
-            form.submit();
+            document.getElementById('product-form').addEventListener('submit', () => {
+                appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+            });
         }
 
         function displayVideos(videos) {
@@ -76,9 +71,13 @@
             fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
         }
 
+        // --- GŁÓWNA LOGIKA ---
         async function getResults(jobId) {
             appContainer.innerHTML = '<h2>Proszę czekać, pobieram wyniki z bazy danych...</h2>';
             try {
+                // Dodajemy opóźnienie, aby dać n8n czas na zapisanie danych
+                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 sekund opóźnienia
+
                 const response = await fetch(`${upstashUrl}/get/${jobId}`, {
                     headers: { 'Authorization': `Bearer ${upstashToken}` }
                 });
@@ -97,16 +96,14 @@
             }
         }
 
-        // Główna logika strony
+        // --- PUNKT STARTOWY ---
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
             const jobId = params.get('jobId');
 
             if (jobId) {
-                // Jeśli w URL jest jobId, pobierz wyniki
                 getResults(jobId);
             } else {
-                // Jeśli nie, wyświetl formularz
                 renderForm();
             }
         };
