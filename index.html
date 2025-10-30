@@ -49,23 +49,48 @@
         const videoLinkForm = document.getElementById('video-link-form');
         const appContainer = document.getElementById('app');
 
-        // Obsługa formularza KROK 1
-        productForm.addEventListener('submit', (e) => {
+        // Obsługa formularza KROK 1 (Fetch API)
+        productForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // ZATRZYMUJEMY domyślne wysłanie
+            
+            // Wyświetlamy komunikat oczekiwania
             appContainer.innerHTML = `
                 <h1>Trwa analiza trendów TikTok dla Twojego produktu...</h1>
                 <p>Do dwóch minut otrzymasz maila z inspiracjami. W e-mailu będzie link do KROKU 2.</p>
             `;
-            // WYSYŁAMY formularz z opóźnieniem, aby komunikat się wyświetlił
-            setTimeout(() => e.target.submit(), 100); 
+
+            // WYSYŁAMY formularz za pomocą Fetch API
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(mainWebhookUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                // Sprawdzamy, czy odpowiedź jest w porządku
+                if (!response.ok) {
+                    throw new Error(`Błąd serwera: ${response.status}`);
+                }
+                
+                // Sukces. Workflow działa w tle.
+                
+            } catch (error) {
+                appContainer.innerHTML = `
+                    <h1>Krytyczny błąd</h1>
+                    <p>Wystąpił problem z połączeniem z serwerem: ${error.message}</p>
+                    <button onclick="window.location.reload()">Spróbuj ponownie</button>
+                `;
+            }
         });
 
-        // Obsługa formularza KROK 2
+        // Obsługa formularza KROK 2 (Czysty HTML - wysyła się normalnie)
         videoLinkForm.addEventListener('submit', () => {
             appContainer.innerHTML = `
                 <h1>Rozpoczynamy generowanie wideo...</h1>
                 <p>Wideo zostanie wysłane na Twój e-mail, gdy będzie gotowe.</p>
             `;
+            // Formularz wysyła się normalnie, bo nie ma e.preventDefault()
         });
 
         // Logika przełączania formularzy
