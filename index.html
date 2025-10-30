@@ -3,125 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Wideo TikTok</title>
+    <title>Wybór Wideo TikTok</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; background-color: #f4f4f9; color: #333; }
-        h1, h2 { color: #1a1a1a; }
-        .hidden { display: none; }
-        form { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input[type="text"], input[type="file"] { width: 100%; padding: 10px; margin: 10px 0 20px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
-        button:hover { background-color: #0056b3; }
-        .video-choice { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        #loading, #final-message, #error-message { text-align: center; padding: 40px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        #app { background-color: #1e1e1e; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 90%; max-width: 600px; text-align: center; }
+        h1, h2 { color: #ffffff; }
+        input, textarea, button { width: calc(100% - 20px); padding: 10px; margin-bottom: 1rem; border-radius: 4px; border: 1px solid #333; background-color: #2c2c2c; color: #e0e0e0; font-size: 1rem; }
+        button { background-color: #1DB954; border: none; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #1ED760; }
+        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2rem; }
+        .video-item { background-color: #282828; padding: 1rem; border-radius: 8px; }
+        .video-item blockquote { margin: 0 auto; }
+        .video-stats { font-size: 0.9rem; color: #b3b3b3; margin-top: 1rem; }
+        .choose-btn { margin-top: 1rem; background-color: #535353; }
+        .choose-btn:hover { background-color: #737373; }
+        .loader p { font-size: 1.2rem; }
+        .loader span { font-size: 0.9rem; color: #b3b3b3; }
     </style>
 </head>
 <body>
-
-    <div id="content-container">
-        <!-- Formularz -->
-        <h1>Stwórz swoje viralowe wideo</h1>
-        <form id="productForm">
-            <label for="product_image">1. Wgraj zdjęcie produktu:</label>
-            <input type="file" id="product_image" name="product_image" required>
-            <label for="product_name">2. Podaj nazwę produktu:</label>
-            <input type="text" id="product_name" name="product_name" required>
-            <label for="product_keywords">3. Opisz produkt lub niszę (3-5 słów):</label>
-            <input type="text" id="product_keywords" name="product_keywords" required>
-            <button type="submit">Znajdź inspiracje</button>
-        </form>
+    <div id="app">
+        <!-- Kontener na formularz lub wyniki -->
     </div>
 
-    <script async src="https://www.tiktok.com/embed.js"></script>
     <script>
-        const container = document.getElementById('content-container' );
-        const productForm = document.getElementById('productForm');
+        const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
+        const resultsWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/7c2e2895-569e-4622-81a1-b82f7fea4169';
+        const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
+        const appContainer = document.getElementById('app' );
 
-        productForm.addEventListener('submit', handleFormSubmit);
+        function renderForm() {
+            appContainer.innerHTML = `
+                <h1>Generator Viralowych Wideo</h1>
+                <form id="product-form">
+                    <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
+                    <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
+                    <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
+                    <input type="file" id="product_image" name="product_image" accept="image/*" required>
+                    <button type="submit">Znajdź inspiracje</button>
+                </form>
+            `;
+            document.getElementById('product-form').addEventListener('submit', handleFormSubmit);
+        }
 
         async function handleFormSubmit(event) {
             event.preventDefault();
-            container.innerHTML = `<div id="loading"><h2>Proszę czekać, analizujemy trendy...</h2><p>(To może potrwać do 2 minut)</p></div>`;
-
-            const formData = new FormData(productForm);
+            const form = event.target;
+            const formData = new FormData(form);
             
-            // === CZYSTY URL PRODUKCYJNY DO WORKFLOW #1 ===
-            const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
+            showLoader("Proszę czekać, analizujemy trendy...");
 
             try {
                 const response = await fetch(mainWebhookUrl, {
                     method: 'POST',
-                    // Blok 'headers' został usunięty
-                    body: formData
-                } );
+                    body: formData,
+                });
 
-                if (!response.ok) throw new Error(`Błąd serwera: ${response.statusText}`);
-                
-                const responseData = await response.json();
-                const jobId = responseData.jobId; 
-
-                if (!jobId) {
-                    throw new Error("Odpowiedź serwera nie zawierała 'jobId'. Sprawdź ostatni węzeł w n8n.");
+                if (!response.ok) {
+                    throw new Error(`Błąd serwera: ${response.statusText}`);
                 }
 
-                // Rozpocznij odpytywanie o wyniki
-                pollForResults(jobId);
-
-            } catch (e) {
-                container.innerHTML = `<div id="error-message"><h2>Wystąpił błąd: ${e.message}. Spróbuj ponownie.</h2></div>`;
+                const result = await response.json();
+                if (result.jobId) {
+                    handleResults(result.jobId);
+                } else {
+                    throw new Error("Odpowiedź serwera nie zawierała jobId.");
+                }
+            } catch (error) {
+                showError(`Wystąpił błąd: ${error.message}. Spróbuj ponownie.`);
             }
         }
 
-        function pollForResults(jobId) {
-            // === URL DO WORKFLOW #2 (DOSTAWCA WYNIKÓW) - PRODUKCYJNY ===
-            const resultsWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/7c2e2895-569e-4622-81a1-b82f7fea4169';
-            
+        function handleResults(jobId) {
             let attempts = 0;
-            const interval = setInterval(async ( ) => {
-                if (attempts > 30) { // Timeout po 2.5 minutach
-                    clearInterval(interval);
-                    container.innerHTML = `<div id="error-message"><h2>Przekroczono czas oczekiwania na wyniki. Spróbuj ponownie.</h2></div>`;
+            const maxAttempts = 60; // 2 minuty (60 * 2s)
+
+            const intervalId = setInterval(async () => {
+                if (attempts >= maxAttempts) {
+                    clearInterval(intervalId);
+                    showError("Przekroczono czas oczekiwania na wyniki. Spróbuj ponownie.");
                     return;
                 }
-                
+                attempts++;
+
                 try {
                     const response = await fetch(`${resultsWebhookUrl}?jobId=${jobId}`);
-                    if (response.status === 200) {
-                        const videos = await response.json();
-                        clearInterval(interval);
-                        displayResults(videos);
+                    if (response.status === 204) {
+                        console.log(`Próba ${attempts}: Dane nie są jeszcze gotowe.`);
+                        return;
                     }
-                } catch (e) {
-                    clearInterval(interval);
-                    container.innerHTML = `<div id="error-message"><h2>Błąd podczas pobierania wyników: ${e.message}</h2></div>`;
+                    if (!response.ok) {
+                        throw new Error(`Błąd serwera: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+
+                    if (result && result.data && result.data.length > 0) {
+                        clearInterval(intervalId);
+                        displayVideos(result.data);
+                    } else {
+                         console.log(`Próba ${attempts}: Otrzymano dane, ale są puste. Czekam dalej.`);
+                    }
+                } catch (error) {
+                    console.error('Błąd podczas odpytywania:', error);
+                    clearInterval(intervalId);
+                    showError(`Błąd podczas pobierania wyników: ${error.message}`);
                 }
-                
-                attempts++;
-            }, 5000); 
+            }, 2000);
         }
 
-        function displayResults(videos) {
-            let videoHTML = '<h2>Wybierz wideo, które posłuży jako inspiracja:</h2>';
-            videos.forEach((video, index) => {
-                videoHTML += `
-                    <div class="video-choice">
-                        <h3>Opcja ${index + 1}</h3>
+        function displayVideos(videos) {
+            let content = '<h1>Wybierz wideo do odtworzenia</h1><div id="results-container">';
+            videos.forEach(video => {
+                content += `
+                    <div class="video-item">
                         ${video.embedHtml}
-                        <p><strong>Statystyki:</strong> ${video.playCount.toLocaleString('pl-PL')} odtworzeń, ${video.diggCount.toLocaleString('pl-PL')} polubień</p>
-                        <button onclick="chooseVideo('${video.id}')">Wybieram to wideo</button>
+                        <div class="video-stats">
+                            <p>Odtworzenia: ${video.playCount || 'N/A'} | Polubienia: ${video.diggCount || 'N/A'}</p>
+                        </div>
+                        <button class="choose-btn" onclick="chooseVideo('${video.id}')">Wybieram to wideo</button>
                     </div>
                 `;
             });
-            container.innerHTML = videoHTML;
+            content += '</div>';
+            appContainer.innerHTML = content;
         }
 
         function chooseVideo(videoId) {
-            // === URL DO WORKFLOW #3 (GENERATOR WIDEO) - PRODUKCYJNY ===
-            const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
-            
-            container.innerHTML = `<div id="final-message"><h2>Dziękujemy! Rozpoczynamy generowanie wideo.</h2><p>Gdy będzie gotowe, otrzymasz je na e-mail.</p></div>`;
-            fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' } );
+            appContainer.innerHTML = `<div><h2>Dziękujemy za wybór!</h2><p>Rozpoczynamy generowanie Twojego unikalnego wideo. Gdy będzie gotowe, otrzymasz je na e-mail.</p></div>`;
+            fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
         }
+
+        function showLoader(message) {
+            appContainer.innerHTML = `<div class="loader"><h2>${message}</h2><span>(To może potrwać do 2 minut)</span></div>`;
+        }
+
+        function showError(message) {
+            appContainer.innerHTML = `<div><h1>Wystąpił błąd</h1><p>${message}</p><button onclick="renderForm()">Spróbuj ponownie</button></div>`;
+        }
+
+        // Inicjalizacja
+        renderForm();
     </script>
 </body>
 </html>
