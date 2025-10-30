@@ -1,6 +1,27 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Viralowych Wideo</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
+        #app { background-color: #1e1e1e; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; max-width: 800px; text-align: center; }
+        h1, h2 { color: #ffffff; }
+        input, textarea, button { width: calc(100% - 22px); padding: 10px; margin-bottom: 1rem; border-radius: 4px; border: 1px solid #333; background-color: #2c2c2c; color: #e0e0e0; font-size: 1rem; }
+        button { background-color: #1DB954; border: none; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #1ED760; }
+        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2rem; }
+        .video-item { background-color: #282828; padding: 1rem; border-radius: 8px; }
+        .video-item blockquote { max-width: 100% !important; min-width: 280px !important; margin: 0 auto; }
+        .video-stats { font-size: 0.9rem; color: #b3b3b3; margin-top: 1rem; }
+        .choose-btn { margin-top: 1rem; background-color: #535353; }
+        .choose-btn:hover { background-color: #737373; }
+    </style>
+</head>
 <body>
     <div id="app">
-        <!-- Poniższy kod HTML będzie widoczny, gdy nie ma jobId w URL -->
+        <!-- Formularz jest tutaj, ale zostanie ukryty przez JS, jeśli jest jobId -->
         <form id="product-form" action="https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae" method="POST" enctype="multipart/form-data">
             <h1>Generator Viralowych Wideo</h1>
             <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
@@ -13,10 +34,11 @@
 
     <script>
         // --- KONFIGURACJA ---
-        const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
+        const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
         const upstashUrl = 'https://eu2-saved-bug-31043.upstash.io';
         const upstashToken = 'AXlEAAIncDJkYjNkYjQwYWEyMmM0YWQyOTE3YWI3YWViMDI5YmUyMnAyMzEwNDQ';
         const appContainer = document.getElementById('app' );
+        const form = document.getElementById('product-form');
 
         function displayVideos(videos) {
             let content = '<h1>Wybierz wideo do odtworzenia</h1><div id="results-container">';
@@ -48,6 +70,7 @@
         async function getResults(jobId) {
             appContainer.innerHTML = '<h2>Proszę czekać, pobieram wyniki z bazy danych...</h2>';
             try {
+                // Dodajemy opóźnienie, aby dać n8n czas na zapisanie danych
                 await new Promise(resolve => setTimeout(resolve, 5000));
 
                 const response = await fetch(`${upstashUrl}/get/${jobId}`, {
@@ -74,9 +97,16 @@
             const jobId = params.get('jobId');
 
             if (jobId) {
+                // Jeśli jest jobId, ukrywamy formularz i pokazujemy wyniki
+                form.style.display = 'none';
                 getResults(jobId);
+            } else {
+                // Jeśli nie ma jobId, dodajemy obsługę wyświetlania komunikatu oczekiwania
+                form.addEventListener('submit', () => {
+                    appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+                });
             }
-            // Jeśli nie ma jobId, formularz jest już widoczny w HTML
         };
     </script>
 </body>
+</html>
