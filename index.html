@@ -1,59 +1,22 @@
-<!DOCTYPE html>
-<html lang="pl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generator Viralowych Wideo</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
-        #app { background-color: #1e1e1e; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); width: 100%; max-width: 800px; text-align: center; }
-        h1, h2 { color: #ffffff; }
-        input, textarea, button { width: calc(100% - 22px); padding: 10px; margin-bottom: 1rem; border-radius: 4px; border: 1px solid #333; background-color: #2c2c2c; color: #e0e0e0; font-size: 1rem; }
-        button { background-color: #1DB954; border: none; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
-        button:hover { background-color: #1ED760; }
-        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2rem; }
-        .video-item { background-color: #282828; padding: 1rem; border-radius: 8px; }
-        .video-item blockquote { max-width: 100% !important; min-width: 280px !important; margin: 0 auto; }
-        .video-stats { font-size: 0.9rem; color: #b3b3b3; margin-top: 1rem; }
-        .choose-btn { margin-top: 1rem; background-color: #535353; }
-        .choose-btn:hover { background-color: #737373; }
-    </style>
-</head>
 <body>
     <div id="app">
-        <!-- Zawartość będzie renderowana przez JavaScript -->
+        <!-- Poniższy kod HTML będzie widoczny, gdy nie ma jobId w URL -->
+        <form id="product-form" action="https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae" method="POST" enctype="multipart/form-data">
+            <h1>Generator Viralowych Wideo</h1>
+            <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
+            <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie )" required></textarea>
+            <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
+            <input type="file" id="product_image" name="product_image" accept="image/*" required>
+            <button type="submit">Znajdź inspiracje</button>
+        </form>
     </div>
 
     <script>
         // --- KONFIGURACJA ---
-        const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
         const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
         const upstashUrl = 'https://eu2-saved-bug-31043.upstash.io';
         const upstashToken = 'AXlEAAIncDJkYjNkYjQwYWEyMmM0YWQyOTE3YWI3YWViMDI5YmUyMnAyMzEwNDQ';
         const appContainer = document.getElementById('app' );
-
-        // --- FUNKCJE RENDERUJĄCE ---
-        function renderForm() {
-            appContainer.innerHTML = `
-                <h1>Generator Viralowych Wideo</h1>
-                <form id="product-form" action="${mainWebhookUrl}" method="POST" enctype="multipart/form-data">
-                    <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
-                    <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
-                    <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
-                    <input type="file" id="product_image" name="product_image" accept="image/*" required>
-                    <button type="submit">Znajdź inspiracje</button>
-                </form>
-            `;
-            
-            // POPRAWKA: Wymuszamy wyświetlenie komunikatu oczekiwania przed wysłaniem formularza.
-            document.getElementById('product-form').addEventListener('submit', (e) => {
-                e.preventDefault(); // Zatrzymujemy natychmiastowe wysłanie
-                appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
-                
-                // Opóźniamy właściwe wysłanie, aby przeglądarka zdążyła wyświetlić komunikat
-                setTimeout(() => e.target.submit(), 100); 
-            });
-        }
 
         function displayVideos(videos) {
             let content = '<h1>Wybierz wideo do odtworzenia</h1><div id="results-container">';
@@ -85,8 +48,7 @@
         async function getResults(jobId) {
             appContainer.innerHTML = '<h2>Proszę czekać, pobieram wyniki z bazy danych...</h2>';
             try {
-                // Dodajemy opóźnienie, aby dać n8n czas na zapisanie danych
-                await new Promise(resolve => setTimeout(resolve, 5000)); // 5 sekund opóźnienia
+                await new Promise(resolve => setTimeout(resolve, 5000));
 
                 const response = await fetch(`${upstashUrl}/get/${jobId}`, {
                     headers: { 'Authorization': `Bearer ${upstashToken}` }
@@ -113,10 +75,8 @@
 
             if (jobId) {
                 getResults(jobId);
-            } else {
-                renderForm();
             }
+            // Jeśli nie ma jobId, formularz jest już widoczny w HTML
         };
     </script>
 </body>
-</html>
