@@ -36,7 +36,7 @@
         function renderForm() {
             appContainer.innerHTML = `
                 <h1>Generator Viralowych Wideo</h1>
-                <form id="product-form" action="${mainWebhookUrl}" method="POST" enctype="multipart/form-data">
+                <form id="product-form">
                     <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
                     <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
                     <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
@@ -44,9 +44,7 @@
                     <button type="submit">Znajdź inspiracje</button>
                 </form>
             `;
-            document.getElementById('product-form').addEventListener('submit', () => {
-                appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
-            });
+            document.getElementById('product-form').addEventListener('submit', handleFormSubmit);
         }
 
         function displayVideos(videos) {
@@ -71,7 +69,40 @@
             fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
         }
 
-        // --- GŁÓWNA LOGIKA ---
+        function showError(message) {
+            appContainer.innerHTML = `<h1>Błąd</h1><p>${message}</p><button onclick="window.location.href = window.location.origin + window.location.pathname">Spróbuj ponownie</button>`;
+        }
+
+        // --- GŁÓWNA LOGIKA FORMULARZA (POPRAWIONA) ---
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+
+            try {
+                // Wysyłamy dane do n8n za pomocą Fetch API
+                const response = await fetch(mainWebhookUrl, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                // Sprawdzamy, czy nastąpiło przekierowanie (to oznacza sukces)
+                if (response.redirected) {
+                    // Jeśli tak, pozwalamy przeglądarce na to przekierowanie
+                    window.location.href = response.url;
+                } else {
+                    // Jeśli nie, to znaczy, że n8n nie odpowiedział przekierowaniem
+                    const errorText = await response.text();
+                    showError(`Błąd komunikacji: Oczekiwano przekierowania. Odpowiedź serwera: ${errorText}`);
+                }
+            } catch (error) {
+                showError(`Krytyczny błąd sieci: ${error.message}`);
+            }
+        }
+
+        // --- GŁÓWNA LOGIKA POBIERANIA WYNIKÓW ---
         async function getResults(jobId) {
             appContainer.innerHTML = '<h2>Proszę czekać, pobieram wyniki z bazy danych...</h2>';
             try {
@@ -92,7 +123,7 @@
                     appContainer.innerHTML = '<h1>Nie znaleziono wyników. Być może zadanie wciąż jest przetwarzane lub wystąpił błąd.</h1>';
                 }
             } catch (error) {
-                appContainer.innerHTML = `<h1>Wystąpił błąd podczas pobierania wyników:</h1><p>${error.message}</p>`;
+                showError(`Wystąpił błąd podczas pobierania wyników: ${error.message}`);
             }
         }
 
