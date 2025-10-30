@@ -15,31 +15,25 @@
         .video-item { background-color: #282828; padding: 1rem; border-radius: 8px; }
         .video-item blockquote { max-width: 100% !important; min-width: 280px !important; margin: 0 auto; }
         .video-stats { font-size: 0.9rem; color: #b3b3b3; margin-top: 1rem; }
-        .choose-btn { margin-top: 1rem; background-color: #535353; }
-        .choose-btn:hover { background-color: #737373; }
+        .choose-btn { margin-top: 1rem; background-color: #1DB954; } /* Zmieniono kolor na zielony */
+        .choose-btn:hover { background-color: #1ED760; }
+        .job-id-input { background-color: #2c2c2c; border: 1px solid #333; color: #e0e0e0; padding: 10px; margin-top: 20px; text-align: center; }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- Formularz jest tutaj, ale zostanie ukryty przez JS, jeśli jest jobId -->
-        <form id="product-form" action="https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae" method="POST" enctype="multipart/form-data">
-            <h1>Generator Viralowych Wideo</h1>
-            <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
-            <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie )" required></textarea>
-            <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
-            <input type="file" id="product_image" name="product_image" accept="image/*" required>
-            <button type="submit">Znajdź inspiracje</button>
-        </form>
+        <!-- Zawartość będzie renderowana przez JavaScript -->
     </div>
 
     <script>
         // --- KONFIGURACJA ---
-        const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb';
+        const mainWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/adb882e6-67b9-470b-83ea-a53af1977cae';
+        const choiceWebhookUrl = 'https://nextency.app.n8n.cloud/webhook/ba73cf99-636f-4d90-87d8-856d5d5050fb'; // URL dla Workflow #2
         const upstashUrl = 'https://eu2-saved-bug-31043.upstash.io';
         const upstashToken = 'AXlEAAIncDJkYjNkYjQwYWEyMmM0YWQyOTE3YWI3YWViMDI5YmUyMnAyMzEwNDQ';
         const appContainer = document.getElementById('app' );
-        const form = document.getElementById('product-form');
 
+        // --- FUNKCJE POMOCNICZE ---
         function displayVideos(videos) {
             let content = '<h1>Wybierz wideo do odtworzenia</h1><div id="results-container">';
             videos.forEach(video => {
@@ -59,7 +53,11 @@
 
         function chooseVideo(videoId) {
             appContainer.innerHTML = `<div><h2>Dziękujemy za wybór!</h2><p>Rozpoczynamy generowanie Twojego unikalnego wideo. Gdy będzie gotowe, otrzymasz je na e-mail.</p></div>`;
-            fetch(`${choiceWebhookUrl}?videoId=${videoId}`, { mode: 'no-cors' });
+            // Wywołanie Workflow #2 z wybranym videoId
+            // UWAGA: Musimy dodać jobId, który jest w URL!
+            const params = new URLSearchParams(window.location.search);
+            const jobId = params.get('jobId');
+            fetch(`${choiceWebhookUrl}?videoId=${videoId}&jobId=${jobId}`, { mode: 'no-cors' });
         }
 
         function showError(message) {
@@ -70,7 +68,6 @@
         async function getResults(jobId) {
             appContainer.innerHTML = '<h2>Proszę czekać, pobieram wyniki z bazy danych...</h2>';
             try {
-                // Dodajemy opóźnienie, aby dać n8n czas na zapisanie danych
                 await new Promise(resolve => setTimeout(resolve, 5000));
 
                 const response = await fetch(`${upstashUrl}/get/${jobId}`, {
@@ -91,6 +88,39 @@
             }
         }
 
+        // --- RENDEROWANIE FORMULARZA I WYNIKÓW ---
+        function renderForm() {
+            appContainer.innerHTML = `
+                <h1>Generator Viralowych Wideo</h1>
+                <form id="product-form" action="${mainWebhookUrl}" method="POST" enctype="multipart/form-data">
+                    <input type="text" id="product_name" name="product_name" placeholder="Nazwa produktu" required>
+                    <textarea id="product_keywords" name="product_keywords" placeholder="3-5 słów kluczowych (np. gadżet, kuchnia, czyszczenie)" required></textarea>
+                    <label for="product_image" style="display: block; margin-bottom: 0.5rem;">Zdjęcie produktu:</label>
+                    <input type="file" id="product_image" name="product_image" accept="image/*" required>
+                    <button type="submit">Znajdź inspiracje</button>
+                </form>
+                <div class="job-id-input">
+                    <h2>Awaryjny tryb ręczny</h2>
+                    <p>Jeśli po wysłaniu formularza nie nastąpi przekierowanie, wpisz ID wykonania (jobId) z n8n:</p>
+                    <input type="text" id="manual-job-id" placeholder="Wpisz ID wykonania (np. 379)">
+                    <button onclick="loadManualResults()">Pokaż wyniki</button>
+                </div>
+            `;
+            
+            // Obsługa wyświetlania komunikatu oczekiwania
+            document.getElementById('product-form').addEventListener('submit', () => {
+                appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
+            });
+        }
+
+        function loadManualResults() {
+            const manualId = document.getElementById('manual-job-id').value;
+            if (manualId) {
+                // Przekierowujemy na stronę z poprawnym jobId
+                window.location.href = window.location.origin + window.location.pathname + `?jobId=${manualId}`;
+            }
+        }
+
         // --- PUNKT STARTOWY ---
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
@@ -98,13 +128,10 @@
 
             if (jobId) {
                 // Jeśli jest jobId, ukrywamy formularz i pokazujemy wyniki
-                form.style.display = 'none';
+                if (form) form.style.display = 'none';
                 getResults(jobId);
             } else {
-                // Jeśli nie ma jobId, dodajemy obsługę wyświetlania komunikatu oczekiwania
-                form.addEventListener('submit', () => {
-                    appContainer.innerHTML = '<h2>Proszę czekać, uruchamiam workflow...</h2><span>(To może potrwać do minuty, zaraz nastąpi przekierowanie)</span>';
-                });
+                renderForm();
             }
         };
     </script>
